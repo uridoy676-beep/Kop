@@ -11,7 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/style.css">
     <style>
-        /* গাইড কার্ড ও বাটনের কাস্টম স্টাইল */
+        /* স্ক্রিনশটের মতো গাইড কার্ড ও বাটনের কাস্টম স্টাইল */
         .custom-guide-card {
             margin-top: 24px;
             padding: 24px;
@@ -53,7 +53,7 @@
             transition: all 0.2s ease;
         }
         .lang-btn.active {
-            background: #00b058;
+            background: #00b058; /* নিয়ন গ্রিন কালার */
             color: #ffffff;
         }
         /* লিস্ট স্টাইল */
@@ -114,6 +114,10 @@
                         <path d="M9 1.5V3M9 15V16.5M1.5 9H3M15 9H16.5M3.7 3.7L4.76 4.76M13.24 13.24L14.3 14.3M14.3 3.7L13.24 4.76M4.76 13.24L3.7 14.3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
                     </svg>
                 </button>
+                <span class="status-badge" id="statusBadge">
+                    <span class="status-dot"></span>
+                    Ready
+                </span>
             </div>
         </div>
     </header>
@@ -134,6 +138,25 @@
             </div>
 
             <div class="input-card" id="inputCard">
+                <div class="mode-selector">
+                    <div class="mode-options">
+                        <button class="mode-btn active" id="modeOAuth2" data-mode="oauth2">
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                                <path d="M8 1L14 4V8C14 11.31 11.42 14.38 8 15C4.58 14.38 2 11.31 2 8V4L8 1Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M6 8L7.5 9.5L10.5 6.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            OAuth2
+                        </button>
+                        <button class="mode-btn" id="modeGraphAPI" data-mode="graphapi">
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                                <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"/>
+                                <path d="M8 4V8L10.5 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            Graph API
+                        </button>
+                    </div>
+                </div>
+
                 <div class="input-group">
                     <label class="input-label" for="credentialInput">Credentials</label>
                     <div class="textarea-wrapper">
@@ -169,7 +192,7 @@
                             <rect x="2" y="4" width="16" height="12" rx="2" stroke="currentColor" stroke-width="1.8"/>
                             <path d="M2 6L10 12L18 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
                         </svg>
-                        OAuth2 & Graph API
+                        Read Mailbox
                     </span>
                     <span class="btn-loading" style="display:none;">
                         <div class="spinner"></div>
@@ -182,26 +205,26 @@
                 <div class="custom-guide-header">
                     <div class="custom-guide-title" id="guideSubtitle">GUIDE</div>
                     <div class="lang-switch-container">
-                        <button id="btnBn" class="lang-btn active" onclick="switchLang('bn')">বাংলা</button>
-                        <button id="btnEn" class="lang-btn" onclick="switchLang('en')">English</button>
+                        <button id="btnBn" class="lang-btn" onclick="switchLang('bn')">বাংলা</button>
+                        <button id="btnEn" class="lang-btn active" onclick="switchLang('en')">English</button>
                     </div>
                 </div>
                 <ul class="custom-guide-steps">
                     <li>
                         <span class="step-num">1</span>
-                        <span id="step1">উপরে থেকে <strong>Gmail</strong> বা <strong>Hotmail / Outlook</strong> সিলেক্ট করুন।</span>
+                        <span id="step1">From the top, select either <strong>Gmail</strong> or <strong>Hotmail / Outlook</strong>.</span>
                     </li>
                     <li>
                         <span class="step-num">2</span>
-                        <span id="step2">Gmail হলে শুধু <strong>Gmail address</strong>। Hotmail হলে <strong>Mail</strong> মোডে মেইল, না থাকলে <strong>Details</strong> মোডে পুরো লাইন দিন।</span>
+                        <span id="step2"><strong>Gmail</strong>: address only. <strong>Hotmail</strong>: Mail mode for email, or <strong>Details</strong> to paste the full line if admin has not added it.</span>
                     </li>
                     <li>
                         <span class="step-num">3</span>
-                        <span id="step3"><strong>Get Codes</strong> এ ক্লিক করলে নিচে কোড গুলো দেখা যাবে এবং এক ক্লিকে কপি করতে পারবেন।</span>
+                        <span id="step3">Click <strong>Get Codes</strong> to see all codes below and copy them with one click.</span>
                     </li>
                     <li>
                         <span class="step-num">4</span>
-                        <span id="step4">🕒 বাটনে ক্লিক করে আগের সব কোডের <strong>History</strong> দেখতে পারবেন।</span>
+                        <span id="step4">Click the 🕒 button to view <strong>History</strong> of all fetched codes.</span>
                     </li>
                 </ul>
             </div>
