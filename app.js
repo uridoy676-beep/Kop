@@ -11,6 +11,9 @@ const AVATAR_COLORS = [
     "#005b70", "#986f0b", "#c43e1c", "#4f6bed",
 ];
 
+// 🔗 আপনার একদম সঠিক লাইভ ব্যাকএন্ড ইউআরএল (Render থেকে পাওয়া)
+const BACKEND_URL = 'https://kop-rt4v.onrender.com'; 
+
 function getAvatarColor(name) {
     let hash = 0;
     for (let i = 0; i < name.length; i++) {
@@ -90,16 +93,16 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // Mode switching
-    els.modeOAuth2.addEventListener("click", () => setMode("oauth2"));
-    els.modeGraphAPI.addEventListener("click", () => setMode("graphapi"));
+    if(els.modeOAuth2) els.modeOAuth2.addEventListener("click", () => setMode("oauth2"));
+    if(els.modeGraphAPI) els.modeGraphAPI.addEventListener("click", () => setMode("graphapi"));
 
     // Refresh & close
-    els.refreshBtn.addEventListener("click", handleRefresh);
-    els.closeResultsBtn.addEventListener("click", closeResults);
+    if(els.refreshBtn) els.refreshBtn.addEventListener("click", handleRefresh);
+    if(els.closeResultsBtn) els.closeResultsBtn.addEventListener("click", closeResults);
 
     // Modal
-    els.modalCloseBtn.addEventListener("click", closeModal);
-    els.modalOverlay.addEventListener("click", (e) => {
+    if(els.modalCloseBtn) els.modalCloseBtn.addEventListener("click", closeModal);
+    if(els.modalOverlay) els.modalOverlay.addEventListener("click", (e) => {
         if (e.target === els.modalOverlay) closeModal();
     });
 
@@ -111,22 +114,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Theme toggle
     initTheme();
-    els.themeToggle.addEventListener("click", toggleTheme);
+    if(els.themeToggle) els.themeToggle.addEventListener("click", toggleTheme);
 });
 
 // === Mode Switching ===
 function setMode(mode) {
     state.mode = mode;
 
-    els.modeOAuth2.classList.toggle("active", mode === "oauth2");
-    els.modeGraphAPI.classList.toggle("active", mode === "graphapi");
+    if(els.modeOAuth2) els.modeOAuth2.classList.toggle("active", mode === "oauth2");
+    if(els.modeGraphAPI) els.modeGraphAPI.classList.toggle("active", mode === "graphapi");
 
     if (mode === "oauth2") {
         els.credentialInput.placeholder = "email|password|refresh_token|client_id";
-        els.inputHint.innerHTML = 'Format: <code>email|password|refresh_token|client_id</code>';
+        if(els.inputHint) els.inputHint.innerHTML = 'Format: <code>email|password|refresh_token|client_id</code>';
     } else {
         els.credentialInput.placeholder = "email|access_token";
-        els.inputHint.innerHTML = 'Format: <code>email|access_token</code> or just <code>access_token</code>';
+        if(els.inputHint) els.inputHint.innerHTML = 'Format: <code>email|access_token</code> or just <code>access_token</code>';
     }
 }
 
@@ -146,7 +149,8 @@ async function handleReadMail() {
     setStatus("Connecting...", "loading");
 
     try {
-        const response = await fetch("/api/read-mail", {
+        // 🚀 এখানে /api/read-mail এর বদলে BACKEND_URL বসানো হয়েছে
+        const response = await fetch(`${BACKEND_URL}/api/read-mail`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -165,12 +169,12 @@ async function handleReadMail() {
         state.emails = data.emails || [];
         renderResults(data);
         setStatus("Connected", "success");
-        showToast(`${data.totalEmails} emails loaded`, "success");
+        showToast(`${data.emails ? data.emails.length : 0} emails loaded`, "success");
 
     } catch (error) {
         console.error("Read mail error:", error);
         setStatus("Error", "error");
-        showToast(error.message || "Failed to read mailbox", "error");
+        showToast(error.message || "Render সার্ভার ঘুমিয়ে থাকলে চালু হতে ৩০-৫০ সেকেন্ড লাগতে পারে। আবার চেষ্টা করুন!", "error");
     } finally {
         setLoading(false);
     }
@@ -191,9 +195,11 @@ function renderResults(data) {
     els.resultsSection.style.display = "block";
 
     // Update account info
-    const email = data.email || "Unknown";
+    const email = data.email || state.currentCredentials.split('|')[0] || "Unknown";
     els.accountEmail.textContent = email;
-    els.accountStats.textContent = `${data.totalEmails} email${data.totalEmails !== 1 ? "s" : ""} in inbox`;
+    
+    const totalMails = state.emails.length;
+    els.accountStats.textContent = `${totalMails} email${totalMails !== 1 ? "s" : ""} loaded`;
 
     const acctColor = getAvatarColor(email);
     els.accountAvatar.textContent = getInitials(email.split("@")[0]);
@@ -218,12 +224,19 @@ function renderResults(data) {
 
     els.emailList.innerHTML = state.emails.map((email, idx) => {
         const isUnread = !email.isRead;
-        const date = formatDate(email.receivedAt);
-        const fromName = email.fromName || "Unknown";
+        const date = formatDate(email.receivedDateTime || email.receivedAt);
+        const fromName = email.from?.emailAddress?.name || email.fromName || "Unknown";
         const subject = email.subject || "(No Subject)";
         const preview = email.bodyPreview || "";
         const initials = getInitials(fromName);
         const color = getAvatarColor(fromName);
+
+        // মেইল সাবজেক্ট বা বডি থেকে ওটিপি কোড হাইলাইট করার লজিক
+        let otpBadge = "";
+        const codeMatch = subject.match(/\d{4,6}/) || (preview && preview.match(/\d{4,6}/));
+        if (codeMatch) {
+            otpBadge = `<span class="otp-badge" style="background:#0f6cbd; color:white; padding:2px 6px; border-radius:4px; font-weight:bold; margin-left:10px;">Code: ${codeMatch[0]}</span>`;
+        }
 
         let badges = "";
         if (email.hasAttachments) {
@@ -240,7 +253,7 @@ function renderResults(data) {
                 <div class="email-avatar" style="background:${color}">${escapeHtml(initials)}</div>
                 <div class="email-content">
                     <div class="email-row-1">
-                        <span class="email-from">${escapeHtml(fromName)}</span>
+                        <span class="email-from">${escapeHtml(fromName)} ${otpBadge}</span>
                         <span class="email-date">${escapeHtml(date)}</span>
                     </div>
                     <div class="email-row-2">
@@ -253,7 +266,6 @@ function renderResults(data) {
         `;
     }).join("");
 
-    // Smooth scroll to top
     window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
@@ -262,20 +274,23 @@ function openEmailDetail(index) {
     const email = state.emails[index];
     if (!email) return;
 
-    const fromName = email.fromName || "Unknown";
+    const fromName = email.from?.emailAddress?.name || email.fromName || "Unknown";
+    const fromAddress = email.from?.emailAddress?.address || email.fromEmail || "";
     const initials = getInitials(fromName);
     const color = getAvatarColor(fromName);
 
     els.modalSubject.textContent = email.subject || "(No Subject)";
-    els.modalFrom.textContent = `${fromName} <${email.fromEmail}>`;
-    els.modalDate.textContent = formatDate(email.receivedAt, true);
+    els.modalFrom.textContent = `${fromName} <${fromAddress}>`;
+    els.modalDate.textContent = formatDate(email.receivedDateTime || email.receivedAt, true);
     els.modalAvatar.textContent = initials;
     els.modalAvatar.style.background = color;
 
-    if (email.bodyType === "html" && email.bodyHtml) {
+    if (email.body && email.body.contentType === 'html') {
+        els.modalBody.innerHTML = sanitizeHtml(email.body.content);
+    } else if (email.bodyType === "html" && email.bodyHtml) {
         els.modalBody.innerHTML = sanitizeHtml(email.bodyHtml);
     } else {
-        els.modalBody.textContent = email.bodyPreview || "(No content)";
+        els.modalBody.textContent = email.body?.content || email.bodyPreview || "(No content)";
     }
 
     els.modalOverlay.style.display = "flex";
@@ -299,14 +314,15 @@ function closeResults() {
 function setLoading(loading) {
     state.isLoading = loading;
     els.readMailBtn.disabled = loading;
-    els.btnContent.style.display = loading ? "none" : "flex";
-    els.btnLoading.style.display = loading ? "flex" : "none";
+    if(els.btnContent) els.btnContent.style.display = loading ? "none" : "flex";
+    if(els.btnLoading) els.btnLoading.style.display = loading ? "flex" : "none";
 }
 
 // === Status Badge ===
 function setStatus(text, type) {
+    if (!els.statusBadge) return;
     const dot = els.statusBadge.querySelector(".status-dot");
-    // Update the text node safely: find the last text node or replace all text
+    
     const textNodes = Array.from(els.statusBadge.childNodes).filter(n => n.nodeType === Node.TEXT_NODE);
     if (textNodes.length > 0) {
         textNodes[textNodes.length - 1].textContent = ` ${text}`;
@@ -325,11 +341,12 @@ function setStatus(text, type) {
     els.statusBadge.style.background = c.bg;
     els.statusBadge.style.borderColor = c.border;
     els.statusBadge.style.color = c.text;
-    dot.style.background = c.dot;
+    if(dot) dot.style.background = c.dot;
 }
 
 // === Toast Notifications ===
 function showToast(message, type = "info") {
+    if (!els.toastContainer) return;
     const toast = document.createElement("div");
     toast.className = `toast toast-${type}`;
 
@@ -403,26 +420,27 @@ function sanitizeHtml(html) {
 // === Theme Toggle ===
 function initTheme() {
     const saved = localStorage.getItem("mailvault-theme");
-    const theme = saved || "light";
+    const theme = saved || "dark"; // ডার্ক মোড ডিফল্ট রাখা হলো
     applyTheme(theme);
 }
 
 function toggleTheme() {
-    const current = document.body.getAttribute("data-theme");
+    const current = document.documentElement.getAttribute("data-theme");
     const next = current === "dark" ? "light" : "dark";
     applyTheme(next);
     localStorage.setItem("mailvault-theme", next);
 }
 
 function applyTheme(theme) {
-    document.body.setAttribute("data-theme", theme);
+    document.documentElement.setAttribute("data-theme", theme);
+    if(!els.themeToggle) return;
     const moonIcon = els.themeToggle.querySelector(".theme-icon-moon");
     const sunIcon = els.themeToggle.querySelector(".theme-icon-sun");
 
-    if (theme === "dark") {
+    if (theme === "dark" && moonIcon && sunIcon) {
         moonIcon.style.display = "none";
         sunIcon.style.display = "flex";
-    } else {
+    } else if (moonIcon && sunIcon) {
         moonIcon.style.display = "flex";
         sunIcon.style.display = "none";
     }
